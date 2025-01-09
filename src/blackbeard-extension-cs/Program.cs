@@ -1,41 +1,29 @@
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.AI;
 
-const string GithubCopilotCompletionsUrl = "https://api.githubcopilot.com/chat/completions";
+const string OllamaEndpoint = "http://localhost:11434";
+const string OllamaModel = "llama3";
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
 app.MapGet("/", () => "Ahoy, matey! Welcome to the Blackbeard Pirate GitHub Copilot Extension!");
-app.MapPost("/", async (
-    [FromHeader(Name = "X-GitHub-Token")] string githubToken,
-    [FromBody] Request userRequest) =>
+app.MapPost("/", async (HttpContext ctx) =>
 {
-    userRequest.Stream = true;
-    userRequest.Messages.Insert(0, new Message
+    var openAiRequest = await OpenAISerializationHelpers.DeserializeChatCompletionRequestAsync(ctx.Request.Body, ctx.RequestAborted);
+
+    openAiRequest.Options.ModelId = null;
+    openAiRequest.Messages.Insert(0, new ChatMessage
     {
-        Role = "system",
-        Content = "Concisely reply as if you were Blackbeard the Pirate."
+        Role = ChatRole.System,
+        Contents = [new TextContent("Concisely reply as if you were Blackbeard the Pirate.")]
     });
 
-    using HttpClient httpClient = new()
-    {
-        DefaultRequestHeaders = { Authorization = new("Bearer", githubToken) }
-    };
+    using IChatClient chatClient = new OllamaChatClient(OllamaEndpoint, OllamaModel);
+    var streamingResponse = chatClient.CompleteStreamingAsync(openAiRequest.Messages, openAiRequest.Options, ctx.RequestAborted);
 
-    var copilotLLMResponse = await httpClient.PostAsJsonAsync(GithubCopilotCompletionsUrl, userRequest);
-    return Results.Stream(await copilotLLMResponse.Content.ReadAsStreamAsync(), "application/json");
+    ctx.Response.StatusCode = StatusCodes.Status200OK;
+    ctx.Response.ContentType = "application/json";
+    await OpenAISerializationHelpers.SerializeStreamingAsync(ctx.Response.Body, streamingResponse, cancellationToken: ctx.RequestAborted);
 });
 
 app.Run();
-
-public record Request
-{
-    public bool Stream { get; set; }
-    public List<Message> Messages { get; set; } = [];
-}
-
-public record Message
-{
-    public required string Role { get; set; }
-    public required string Content { get; set; }
-}
