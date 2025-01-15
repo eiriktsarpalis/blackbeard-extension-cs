@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Octokit;
 
-const string GithubAppName = "eiriktsarpalis-blackbeard";
 const string GithubCopilotCompletionsUrl = "https://api.githubcopilot.com/chat/completions";
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,32 +10,14 @@ app.MapPost("/", async (
     [FromHeader(Name = "X-GitHub-Token")] string githubToken,
     [FromBody] Request userRequest) =>
 {
-    GitHubClient octokitClient = new(new ProductHeaderValue(GithubAppName))
-    {
-        Credentials = new Credentials(githubToken)
-    };
-
-    User user = await octokitClient.User.Current();
-
-    userRequest.Messages.Insert(0, new Message
-    {
-        Role = "system",
-        Content =
-            "Start every response with the user's name, " +
-            $"which is @{user.Login}"
-    });
-
-    userRequest.Messages.Insert(0, new Message
-    {
-        Role = "system",
-        Content =
-            "You are a helpful assistant that replies to " +
-            "user messages as if you were Blackbeard the Pirate."
-    });
-
     userRequest.Stream = true;
+    userRequest.Messages.Insert(0, new Message
+    {
+        Role = "system",
+        Content = "Concisely reply as if you were Blackbeard the Pirate."
+    });
 
-    HttpClient httpClient = new()
+    using HttpClient httpClient = new()
     {
         DefaultRequestHeaders = { Authorization = new("Bearer", githubToken) }
     };
