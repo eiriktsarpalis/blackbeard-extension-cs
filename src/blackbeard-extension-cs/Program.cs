@@ -1,45 +1,23 @@
-using Microsoft.AspNetCore.Mvc;
-
-const string GithubCopilotCompletionsUrl = "https://api.githubcopilot.com/chat/completions";
+using Microsoft.Extensions.AI;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddHttpClient();
+builder.Services.AddScoped<IChatClient, GithubChatClient>();
+builder.Services.AddHttpContextAccessor();
 var app = builder.Build();
 
 app.MapGet("/", () => "Ahoy, matey! Welcome to the Blackbeard Pirate GitHub Copilot Extension!");
-app.MapPost("/", async (
-    [FromHeader(Name = "X-GitHub-Token")] string githubToken,
-    ChatCompletionRequest chatCompletionRequest,
-    HttpClient httpClient,
-    CancellationToken cancellationToken) =>
+app.MapPost("/", (
+    OpenAIChatCompletionRequest chatCompletionRequest,
+    IChatClient chatClient) =>
 {
-    chatCompletionRequest.Stream = true;
     chatCompletionRequest.Messages.Insert(0, new ChatMessage
     {
-        Role = "system",
-        Content = "Concisely reply as if you were Blackbeard the Pirate."
+        Role = ChatRole.System,
+        Contents = [new TextContent("Concisely reply as if you were Blackbeard the Pirate.")]
     });
 
-    HttpRequestMessage httpRequest = new(HttpMethod.Post, GithubCopilotCompletionsUrl)
-    {
-        Headers = { Authorization = new("Bearer", githubToken) },
-        Content = JsonContent.Create(chatCompletionRequest),
-    };
-
-    var copilotLLMResponse = await httpClient.SendAsync(httpRequest, cancellationToken);
-    return Results.Stream(await copilotLLMResponse.Content.ReadAsStreamAsync(), "application/json");
+    var streamingResponse = chatClient.CompleteStreamingAsync(chatCompletionRequest.Messages, chatCompletionRequest.Options);
+    return new OpenAISseCompletionResult(streamingResponse);
 });
 
 app.Run();
-
-public record ChatCompletionRequest
-{
-    public List<ChatMessage> Messages { get; set; } = [];
-    public bool Stream { get; set; }
-}
-
-public record ChatMessage
-{
-    public required string Role { get; set; }
-    public required string Content { get; set; }
-}
