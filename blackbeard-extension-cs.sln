@@ -1,12 +1,12 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35617.110 d17.13
+VisualStudioVersion = 17.13.35617.110
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "blackbeard-extension-cs", "src\blackbeard-extension-cs\blackbeard-extension-cs.csproj", "{ED5F0CE5-00C3-47ED-B91F-996AD76941E2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2C7EAA69-143B-429E-83F3-C87651EA1705}"
 	ProjectSection(SolutionItems) = preProject
-		blackbeard-extension-cs.sln = blackbeard-extension-cs.sln
+		nuget.config = nuget.config
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{34EA396E-D388-4820-88B9-3668FC53DB2D}"
