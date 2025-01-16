@@ -1,45 +1,34 @@
-using Microsoft.AspNetCore.Mvc;
-
-const string GithubCopilotCompletionsUrl = "https://api.githubcopilot.com/chat/completions";
+using Microsoft.Extensions.AI;
+using System.ComponentModel;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddHttpClient();
+builder.Services.AddScopedChatClient<GithubChatClient>().UseFunctionInvocation();
+builder.Services.AddHttpContextAccessor();
 var app = builder.Build();
 
 app.MapGet("/", () => "Ahoy, matey! Welcome to the Blackbeard Pirate GitHub Copilot Extension!");
-app.MapPost("/", async (
-    [FromHeader(Name = "X-GitHub-Token")] string githubToken,
-    ChatCompletionRequest chatCompletionRequest,
-    HttpClient httpClient,
-    CancellationToken cancellationToken) =>
+app.MapPost("/", (OpenAIChatCompletionRequest completionRequest, IChatClient chatClient) =>
 {
-    chatCompletionRequest.Stream = true;
-    chatCompletionRequest.Messages.Insert(0, new ChatMessage
+    (completionRequest.Options.Tools ??= []).Add(AIFunctionFactory.Create(GetNearestPorts));
+    completionRequest.Messages.Insert(0, new ChatMessage
     {
-        Role = "system",
-        Content = "Concisely reply as if you were Blackbeard the friendly Pirate."
+        Role = ChatRole.System,
+        Contents = [new TextContent("Concisely reply as if you were Blackbeard the friendly Pirate.")]
     });
 
-    HttpRequestMessage httpRequest = new(HttpMethod.Post, GithubCopilotCompletionsUrl)
-    {
-        Headers = { Authorization = new("Bearer", githubToken) },
-        Content = JsonContent.Create(chatCompletionRequest),
-    };
-
-    var copilotLLMResponse = await httpClient.SendAsync(httpRequest, cancellationToken);
-    return Results.Stream(await copilotLLMResponse.Content.ReadAsStreamAsync(), "application/json");
+    return chatClient.CompleteStreamingAsync(completionRequest.Messages, completionRequest.Options)
+        .ToOpenAISseResult();
 });
 
 app.Run();
 
-public record ChatCompletionRequest
+[Description("Scouted ports and their treasure.")]
+IEnumerable<Port> GetNearestPorts()
 {
-    public List<ChatMessage> Messages { get; set; } = [];
-    public bool Stream { get; set; }
+    yield return new Port("Port Royal", GarrisonSize: 25, Treasure: 2000);
+    yield return new Port("Nassau", GarrisonSize: 100, Treasure: 10_000);
+    yield return new Port("Tortuga", GarrisonSize: 30, Treasure: 2000);
+    yield return new Port("Havana", GarrisonSize: 10, Treasure: 4000);
 }
 
-public record ChatMessage
-{
-    public required string Role { get; set; }
-    public required string Content { get; set; }
-}
+record Port(string Name, int GarrisonSize, int Treasure);
