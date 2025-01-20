@@ -3,38 +3,43 @@ using Microsoft.AspNetCore.Mvc;
 const string GithubCopilotCompletionsUrl = "https://api.githubcopilot.com/chat/completions";
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddHttpClient();
 var app = builder.Build();
 
 app.MapGet("/", () => "Ahoy, matey! Welcome to the Blackbeard Pirate GitHub Copilot Extension!");
 app.MapPost("/", async (
     [FromHeader(Name = "X-GitHub-Token")] string githubToken,
-    [FromBody] Request userRequest) =>
+    ChatCompletionRequest userRequest,
+    HttpClient httpClient,
+    CancellationToken cancellationToken) =>
 {
     userRequest.Stream = true;
-    userRequest.Messages.Insert(0, new Message
+    userRequest.Messages.Insert(0, new ChatMessage
     {
         Role = "system",
         Content = "Concisely reply as if you were Blackbeard the Pirate."
     });
 
-    using HttpClient httpClient = new()
+    HttpRequestMessage httpRequest = new(HttpMethod.Post, GithubCopilotCompletionsUrl)
     {
-        DefaultRequestHeaders = { Authorization = new("Bearer", githubToken) }
+        Headers = { Authorization = new("Bearer", githubToken) },
+        Content = JsonContent.Create(userRequest),
     };
 
-    var copilotLLMResponse = await httpClient.PostAsJsonAsync(GithubCopilotCompletionsUrl, userRequest);
+    var copilotLLMResponse = await httpClient.SendAsync(httpRequest, cancellationToken);
+
     return Results.Stream(await copilotLLMResponse.Content.ReadAsStreamAsync(), "application/json");
 });
 
 app.Run();
 
-public record Request
+public record ChatCompletionRequest
 {
+    public List<ChatMessage> Messages { get; set; } = [];
     public bool Stream { get; set; }
-    public List<Message> Messages { get; set; } = [];
 }
 
-public record Message
+public record ChatMessage
 {
     public required string Role { get; set; }
     public required string Content { get; set; }
