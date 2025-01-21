@@ -9,25 +9,24 @@ var app = builder.Build();
 app.MapGet("/", () => "Ahoy, matey! Welcome to the Blackbeard Pirate GitHub Copilot Extension!");
 app.MapPost("/", async (
     [FromHeader(Name = "X-GitHub-Token")] string githubToken,
-    ChatCompletionRequest userRequest,
+    ChatCompletionRequest chatCompletionRequest,
     HttpClient httpClient,
     CancellationToken cancellationToken) =>
 {
-    userRequest.Stream = true;
-    userRequest.Messages.Insert(0, new ChatMessage
+    chatCompletionRequest.Stream = true;
+    chatCompletionRequest.Messages.Insert(0, new ChatMessage
     {
         Role = "system",
-        Content = "Concisely reply as if you were Blackbeard the Pirate."
+        Content = "Concisely reply as if you were Blackbeard the friendly Pirate."
     });
 
     HttpRequestMessage httpRequest = new(HttpMethod.Post, GithubCopilotCompletionsUrl)
     {
         Headers = { Authorization = new("Bearer", githubToken) },
-        Content = JsonContent.Create(userRequest),
+        Content = JsonContent.Create(chatCompletionRequest),
     };
 
     var copilotLLMResponse = await httpClient.SendAsync(httpRequest, cancellationToken);
-
     return Results.Stream(await copilotLLMResponse.Content.ReadAsStreamAsync(), "application/json");
 });
 
