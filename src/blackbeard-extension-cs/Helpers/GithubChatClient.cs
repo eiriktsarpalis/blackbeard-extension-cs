@@ -9,12 +9,12 @@ public class GithubChatClient : IChatClient
     private readonly OpenAIChatClient _openAIChatClient;
     private readonly string _modelId;
 
-    public GithubChatClient(IServiceProvider serviceProvider, string? modelId = null)
-        : this(serviceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext?.Request.Headers["X-GitHub-Token"]!, modelId)
+    public GithubChatClient(IServiceProvider serviceProvider)
+        : this(serviceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext?.Request.Headers["X-GitHub-Token"]!)
     {
     }
 
-    public GithubChatClient(string githubToken, string? modelId = null)
+    private GithubChatClient(string githubToken, string? modelId = null)
     {
         ArgumentNullException.ThrowIfNull(githubToken);
 
@@ -23,7 +23,7 @@ public class GithubChatClient : IChatClient
             Endpoint = new("https://api.githubcopilot.com"),
         };
 
-        _modelId = modelId ??= "gpt-3.5-turbo";
+        _modelId = modelId ??= "gpt-4o";
         OpenAI.Chat.ChatClient openAIClient = new(model: modelId, credential: new(githubToken), options);
         _openAIChatClient = new(openAIClient);
     }

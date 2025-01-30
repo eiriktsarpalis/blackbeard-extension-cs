@@ -15,11 +15,3 @@ public sealed class OpenAISseCompletionResult(IAsyncEnumerable<StreamingChatComp
         await OpenAISerializationHelpers.SerializeStreamingAsync(ctx.Response.Body, streamingUpdates, cancellationToken: ctx.RequestAborted).ConfigureAwait(false);
     }
 }
-
-public static class OpenAISseCompletionResultExtensions
-{
-    public static IResult ToOpenAISseResult(this IAsyncEnumerable<StreamingChatCompletionUpdate> streamingUpdates)
-    {
-        return new OpenAISseCompletionResult(streamingUpdates);
-    }
-}

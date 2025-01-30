@@ -1,41 +1,23 @@
 using Microsoft.Extensions.AI;
-using System.ComponentModel;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddScoped<IChatClient>(services =>
-    new GithubChatClient(services, modelId: "gpt-4")
-        .AsBuilder()
-        .UseFunctionInvocation()
-        .Build());
-    
-builder.Services.AddHttpContextAccessor();
+builder.Services.AddChatClient(services => new OllamaChatClient("http://localhost:11434", modelId: "deepseek-r1"));
 var app = builder.Build();
 
 app.MapGet("/", () => "Ahoy, matey! Welcome to the Blackbeard Pirate GitHub Copilot Extension!");
-app.MapPost("/", (
-    OpenAIChatCompletionRequest chatCompletionRequest,
-    IChatClient chatClient) =>
+app.MapPost("/", (OpenAIChatCompletionRequest completionRequest, IChatClient chatClient) =>
 {
-    (chatCompletionRequest.Options.Tools ??= []).Add(AIFunctionFactory.Create(GetNearestPorts));
-    chatCompletionRequest.Messages.Insert(0, new ChatMessage
+    completionRequest.Messages.Insert(0, new ChatMessage
     {
         Role = ChatRole.System,
-        Contents = [new TextContent("Concisely reply as if you were Blackbeard the Pirate.")]
+        Contents = [new TextContent("Concisely reply as if you were Blackbeard the friendly Pirate.")]
     });
 
-    return chatClient.CompleteStreamingAsync(chatCompletionRequest.Messages, chatCompletionRequest.Options)
+    return chatClient.CompleteStreamingAsync(completionRequest.Messages, completionRequest.Options)
+        .SkipWhile(update => update.Text is not "</think>") // Skip all chain-of-thought updates
+        .Skip(1) // Skip the </think> update
+        .Prepend(new() { Text = "Arr, let me give it a think..."}) // Preface response with a thinking message.
         .ToOpenAISseResult();
 });
 
 app.Run();
-
-[Description("Scouted ports and their treasure.")]
-IEnumerable<Port> GetNearestPorts()
-{
-    yield return new Port("Port Royal", GarrisonSize: 25, Treasure: 2000);
-    yield return new Port("Nassau", GarrisonSize: 100, Treasure: 10_000);
-    yield return new Port("Tortuga", GarrisonSize: 30, Treasure: 2000);
-    yield return new Port("Havana", GarrisonSize: 10, Treasure: 4000);
-}
-
-record Port(string Name, int GarrisonSize, int Treasure);
