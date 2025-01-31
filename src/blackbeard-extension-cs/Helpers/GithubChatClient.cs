@@ -1,15 +1,14 @@
-﻿namespace Microsoft.Extensions.AI;
-
-using OpenAI;
+﻿using OpenAI;
 using System.Runtime.CompilerServices;
 
+namespace Microsoft.Extensions.AI;
+
 /// <summary>
-/// Defines a Chat client implementation wrapping the Github Copilot completions API.
+/// Defines an <see cref="IChatClient"/> implementation wrapping the Github Copilot API.
 /// </summary>
 public class GithubChatClient : IChatClient
 {
-    private const string GithubCopilotEndpoint = "https://api.githubcopilot.com";
-    private readonly OpenAIChatClient _openAIChatClient;
+    private readonly IChatClient _openAIChatClient;
     private readonly string _modelId;
 
     public GithubChatClient(IHttpContextAccessor httpContextAccessor, string? modelId = null)
@@ -21,10 +20,9 @@ public class GithubChatClient : IChatClient
     {
         ArgumentNullException.ThrowIfNull(githubToken);
 
-        _modelId = modelId ??= "gpt-4o";
-        OpenAIClientOptions options = new() { Endpoint = new(GithubCopilotEndpoint) };
-        OpenAI.Chat.ChatClient openAIClient = new(model: modelId, credential: new(githubToken), options);
-        _openAIChatClient = new(openAIClient);
+        _modelId = modelId ?? "gpt-4o";
+        OpenAIClientOptions options = new() { Endpoint = new("https://api.githubcopilot.com") };
+        _openAIChatClient = new OpenAI.Chat.ChatClient(_modelId, credential: new(githubToken), options).AsChatClient();
     }
 
     public ChatClientMetadata Metadata => _openAIChatClient.Metadata;
@@ -46,5 +44,5 @@ public class GithubChatClient : IChatClient
     }
 
     object? IChatClient.GetService(Type serviceType, object? serviceKey) => _openAIChatClient.GetService(serviceType, serviceKey);
-    void IDisposable.Dispose() => ((IDisposable)_openAIChatClient).Dispose();
+    void IDisposable.Dispose() => _openAIChatClient.Dispose();
 }
