@@ -9,7 +9,7 @@ var app = builder.Build();
 app.MapGet("/", () => "Ahoy, matey! Welcome to the Blackbeard Pirate GitHub Copilot Extension!");
 app.MapPost("/", (OpenAIChatCompletionRequest completionRequest, IChatClient chatClient) =>
 {
-    (completionRequest.Options.Tools ??= []).Add(AIFunctionFactory.Create(GetNearestPorts));
+    completionRequest.Options.Tools = [AIFunctionFactory.Create(GetNearestPorts)];
     completionRequest.Messages.Insert(0, new ChatMessage
     {
         Role = ChatRole.System,
