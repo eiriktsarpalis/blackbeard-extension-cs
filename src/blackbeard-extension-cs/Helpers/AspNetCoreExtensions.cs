@@ -6,11 +6,20 @@ public static class AspNetCoreExtensions
     /// Registers a chat client of the specified type with the service collection using scoped lifetime.
     /// </summary>
     /// <typeparam name="TChatClient">The implementation type of the chat client.</typeparam>
-    public static ChatClientBuilder AddScopedChatClient<TChatClient>(this IServiceCollection services)
+    public static ChatClientBuilder AddChatClient<TChatClient>(this IServiceCollection services, ServiceLifetime lifetime = ServiceLifetime.Singleton)
         where TChatClient : class, IChatClient
     {
-        ChatClientBuilder builder = new(provider => ActivatorUtilities.CreateInstance<TChatClient>(provider));
-        services.AddScoped(builder.Build);
+        return services.AddChatClient(provider => ActivatorUtilities.CreateInstance<TChatClient>(provider), lifetime);
+    }
+
+    /// <summary>
+    /// Registers a chat client of the specified type with the service collection using scoped lifetime.
+    /// </summary>
+    /// <typeparam name="TChatClient">The implementation type of the chat client.</typeparam>
+    public static ChatClientBuilder AddChatClient(this IServiceCollection services, Func<IServiceProvider, IChatClient> innerClientFactory, ServiceLifetime lifetime)
+    {
+        ChatClientBuilder builder = new(innerClientFactory);
+        services.Add(new ServiceDescriptor(typeof(IChatClient), builder.Build, lifetime));
         return builder;
     }
 

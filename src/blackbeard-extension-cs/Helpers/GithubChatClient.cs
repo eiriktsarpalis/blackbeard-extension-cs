@@ -25,8 +25,6 @@ public class GithubChatClient : IChatClient
         _openAIChatClient = new OpenAI.Chat.ChatClient(_modelId, credential: new(githubToken), options).AsChatClient();
     }
 
-    public ChatClientMetadata Metadata => _openAIChatClient.Metadata;
-
     public async Task<ChatCompletion> CompleteAsync(IList<ChatMessage> chatMessages, ChatOptions? options = null, CancellationToken cancellationToken = default)
     {
         var completion = await _openAIChatClient.CompleteAsync(chatMessages, options, cancellationToken).ConfigureAwait(false);
