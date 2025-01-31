@@ -6,8 +6,6 @@ public static class AspNetCoreExtensions
     /// Registers a chat client of the specified type with the service collection using scoped lifetime.
     /// </summary>
     /// <typeparam name="TChatClient">The implementation type of the chat client.</typeparam>
-    /// <param name="services"></param>
-    /// <returns></returns>
     public static ChatClientBuilder AddScopedChatClient<TChatClient>(this IServiceCollection services)
         where TChatClient : class, IChatClient
     {
@@ -20,8 +18,6 @@ public static class AspNetCoreExtensions
     /// Converts the <see cref="IAsyncEnumerable{T}"/> of <see cref="StreamingChatCompletionUpdate"/> to an <see cref="IResult"/>
     /// that streams the updates using server-sent events in the OpenAI wire format.
     /// </summary>
-    /// <param name="streamingUpdates"></param>
-    /// <returns></returns>
     public static IResult ToOpenAISseResult(this IAsyncEnumerable<StreamingChatCompletionUpdate> streamingUpdates)
     {
         ArgumentNullException.ThrowIfNull(streamingUpdates);
@@ -32,7 +28,6 @@ public static class AspNetCoreExtensions
     {
         public async Task ExecuteAsync(HttpContext ctx)
         {
-            ctx.Response.StatusCode = StatusCodes.Status200OK;
             ctx.Response.ContentType = "text/event-stream";
             streamingUpdates = streamingUpdates.Select(update =>
             {
