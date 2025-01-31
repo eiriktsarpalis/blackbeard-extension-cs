@@ -3,8 +3,8 @@ using Microsoft.Extensions.AI;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScopedChatClient<GithubChatClient>().UseFunctionInvocation();
 builder.Services.AddHttpContextAccessor();
-var app = builder.Build();
 
+var app = builder.Build();
 app.MapGet("/", () => "Ahoy, matey! Welcome to the Blackbeard Pirate GitHub Copilot Extension!");
 app.MapPost("/", (OpenAIChatCompletionRequest completionRequest, IChatClient chatClient) =>
 {
