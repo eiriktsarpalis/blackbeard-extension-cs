@@ -33,7 +33,7 @@ public static class AspNetCoreExtensions
         public async Task ExecuteAsync(HttpContext ctx)
         {
             ctx.Response.StatusCode = StatusCodes.Status200OK;
-            ctx.Response.ContentType = "application/json";
+            ctx.Response.ContentType = "text/event-stream";
             streamingUpdates = streamingUpdates.Select(update =>
             {
                 update.ModelId ??= "<unspecified>";

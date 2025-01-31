@@ -1,5 +1,4 @@
 using Microsoft.Extensions.AI;
-using System.ComponentModel;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScopedChatClient<GithubChatClient>().UseFunctionInvocation();
@@ -22,7 +21,6 @@ app.MapPost("/", (OpenAIChatCompletionRequest completionRequest, IChatClient cha
 
 app.Run();
 
-[Description("Scouted ports and their treasure.")]
 IEnumerable<Port> GetNearestPorts()
 {
     yield return new Port("Port Royal", GarrisonSize: 25, Treasure: 2000);
