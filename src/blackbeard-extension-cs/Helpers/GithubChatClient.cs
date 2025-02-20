@@ -25,16 +25,16 @@ public class GithubChatClient : IChatClient
         _openAIChatClient = new OpenAI.Chat.ChatClient(_modelId, credential: new(githubToken), options).AsChatClient();
     }
 
-    public async Task<ChatCompletion> CompleteAsync(IList<ChatMessage> chatMessages, ChatOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<ChatResponse> GetResponseAsync(IList<ChatMessage> chatMessages, ChatOptions? options = null, CancellationToken cancellationToken = default)
     {
-        var completion = await _openAIChatClient.CompleteAsync(chatMessages, options, cancellationToken).ConfigureAwait(false);
+        var completion = await _openAIChatClient.GetResponseAsync(chatMessages, options, cancellationToken).ConfigureAwait(false);
         completion.ModelId ??= _modelId;
         return completion;
     }
 
-    public async IAsyncEnumerable<StreamingChatCompletionUpdate> CompleteStreamingAsync(IList<ChatMessage> chatMessages, ChatOptions? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IList<ChatMessage> chatMessages, ChatOptions? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (var update in _openAIChatClient.CompleteStreamingAsync(chatMessages, options, cancellationToken).WithCancellation(cancellationToken).ConfigureAwait(false))
+        await foreach (var update in _openAIChatClient.GetStreamingResponseAsync(chatMessages, options, cancellationToken).WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             update.ModelId ??= _modelId;
             yield return update;

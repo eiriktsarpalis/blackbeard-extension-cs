@@ -15,7 +15,7 @@ app.MapPost("/", (OpenAIChatCompletionRequest completionRequest, IChatClient cha
         Contents = [new TextContent("Concisely reply as if you were Blackbeard the friendly Pirate.")]
     });
 
-    return chatClient.CompleteStreamingAsync(completionRequest.Messages, completionRequest.Options)
+    return chatClient.GetStreamingResponseAsync(completionRequest.Messages, completionRequest.Options)
         .ToOpenAISseResult();
 });
 

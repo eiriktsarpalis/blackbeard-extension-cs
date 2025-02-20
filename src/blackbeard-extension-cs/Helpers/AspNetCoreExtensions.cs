@@ -13,27 +13,16 @@ public static class AspNetCoreExtensions
     }
 
     /// <summary>
-    /// Registers a chat client of the specified type with the service collection using scoped lifetime.
-    /// </summary>
-    /// <typeparam name="TChatClient">The implementation type of the chat client.</typeparam>
-    public static ChatClientBuilder AddChatClient(this IServiceCollection services, Func<IServiceProvider, IChatClient> innerClientFactory, ServiceLifetime lifetime)
-    {
-        ChatClientBuilder builder = new(innerClientFactory);
-        services.Add(new ServiceDescriptor(typeof(IChatClient), builder.Build, lifetime));
-        return builder;
-    }
-
-    /// <summary>
     /// Converts the <see cref="IAsyncEnumerable{T}"/> of <see cref="StreamingChatCompletionUpdate"/> to an <see cref="IResult"/>
     /// that streams the updates using server-sent events in the OpenAI wire format.
     /// </summary>
-    public static IResult ToOpenAISseResult(this IAsyncEnumerable<StreamingChatCompletionUpdate> streamingUpdates)
+    public static IResult ToOpenAISseResult(this IAsyncEnumerable<ChatResponseUpdate> streamingUpdates)
     {
         ArgumentNullException.ThrowIfNull(streamingUpdates);
         return new OpenAISseCompletionResult(streamingUpdates);
     }
 
-    private sealed class OpenAISseCompletionResult(IAsyncEnumerable<StreamingChatCompletionUpdate> streamingUpdates) : IResult
+    private sealed class OpenAISseCompletionResult(IAsyncEnumerable<ChatResponseUpdate> streamingUpdates) : IResult
     {
         public async Task ExecuteAsync(HttpContext ctx)
         {
